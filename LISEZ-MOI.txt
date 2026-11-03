@@ -1,0 +1,69 @@
+LOOKI WEAVE CREATOR — VERSION TÉLÉCHARGEABLE
+
+STUDIO VITE ET NUAGE CAMÉRA
+Dans ce dossier : npm install, puis npm run dev.
+Ouvrez l'adresse affichée par Vite (normalement http://127.0.0.1:5173/).
+La page principale ouvre maintenant le studio complet, sans redirection client.
+Le nuage de mailles s'anime automatiquement sur toute la surface.
+La densité initiale du nuage est de 96 mailles en largeur : les points sont
+plus petits et le motif plus fin. « Réglages caméra > Densité des mailles »
+permet de l'ajuster vers de grosses ou de petites mailles.
+En bas à droite, cliquez sur « Activer la caméra », puis « Autoriser »
+dans la demande du navigateur. Le microphone n'est pas demandé.
+Si l'autorisation a déjà été accordée, le mode caméra démarre automatiquement.
+Un visage visible révèle automatiquement le flux caméra dans les mailles ;
+quand le visage disparaît, le motif revient doucement au nuage.
+Le basculement automatique est sélectionné par défaut après autorisation.
+Les couleurs de base des mailles restent exactement celles de la palette choisie,
+y compris pendant la transition. La caméra fournit les formes et les contrastes ;
+le relief et les ombres des fils conservent leur rendu textile.
+Réglages caméra > Toujours montrer la caméra permet un miroir permanent.
+Le détecteur de visage fonctionne sur cet appareil, sans calibration de la pièce.
+Il reconnaît la présence d'un visage, sans identifier la personne.
+Les images en direct ne sont ni envoyées ni sauvegardées automatiquement.
+« Couper la caméra » arrête le flux ; « Retour au studio » revient à l'éditeur.
+En cas de refus, autorisez la caméra dans les réglages du site du navigateur
+et, sur Mac, dans Réglages Système > Confidentialité et sécurité > Caméra.
+Le navigateur doit utiliser localhost/127.0.0.1 ou une adresse HTTPS.
+Vérifications : node --test live-dynamics.test.js ; npm run build.
+
+DÉMARRER SUR MAC
+1. Décompressez entièrement le ZIP.
+2. Double-cliquez sur Lancer-Studio.command.
+3. L'éditeur complet s'ouvre dans votre navigateur.
+4. Gardez la fenêtre Terminal ouverte pendant l'utilisation.
+5. Pour arrêter : Ctrl+C dans le Terminal.
+
+Python 3 doit être installé. Aucun package Python supplémentaire n'est nécessaire.
+Si le double-clic n'est pas disponible, ouvrez Terminal dans ce dossier et lancez :
+python3 start_studio.py
+
+SUR WINDOWS OU LINUX
+Ouvrez un terminal dans ce dossier puis lancez :
+python3 start_studio.py
+Sur Windows, la commande peut aussi être : py start_studio.py
+
+VUES
+Éditeur complet : http://127.0.0.1:8765/?view=studio
+Vue simplifiée comme le lien original : http://127.0.0.1:8765/
+
+FICHIERS MODIFIABLES
+index.html : structure de l'interface.
+brand-theme.css : thème graphique.
+studio-*.js, thread-motion.js et image-placement.js : fonctions du studio.
+shared-study.js : palette et réglages du lien original.
+assets/ : images et polices.
+
+SAUVEGARDER
+Les études sont enregistrées dans le navigateur utilisé sur cet ordinateur.
+Export > Save project permet de conserver un fichier avec les réglages et les images.
+
+RENDUS IA
+Le service local de rendu IA et sa clé API ne sont pas inclus.
+La création des motifs, le placement des images, l'animation et les exports
+standards utilisent les fichiers du site et fonctionnent sans ce service.
+Le téléchargement PNG a été vérifié. La génération SVG aboutit,
+mais son téléchargement n'a pas pu être confirmé dans le navigateur de test.
+
+POLICES
+Le site utilise les fichiers Haffer TRIAL présents dans la source originale.

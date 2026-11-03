@@ -1,0 +1,1 @@
+document.querySelectorAll('.text-weaving input[type=range]').forEach(el=>{const sync=()=>{const out=document.getElementById(el.id+'Val');if(out)out.textContent=el.value};el.addEventListener('input',sync);sync()});

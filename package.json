@@ -1,0 +1,17 @@
+{
+  "name": "looki-weave-creator",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "latest"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "^1.2.0"
+  }
+}
