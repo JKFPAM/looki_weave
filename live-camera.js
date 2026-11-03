@@ -10,6 +10,7 @@ panel.innerHTML = `
   <p id="liveCameraStatus" role="status">Le motif ondule seul. Active la caméra : un visage fera apparaître l’image dans les mailles.</p>
   <div class="controls">
     <button id="enableLiveCamera" class="primary">Activer la caméra</button>
+    <button id="hideLiveUI">Hide UI</button>
     <button id="toggleCloud" aria-pressed="true">Retour au studio</button>
     <button id="stopLiveCamera" hidden>Couper la caméra</button>
   </div>
@@ -40,6 +41,8 @@ const presence = new FacePresence();
 let faceDetector = null, detectorPromise = null, lastDetection = -Infinity;
 let active = true, stream = null, requestId = 0, pixels = null;
 let lastTick = 0, phase = 0, blend = 0, raf = 0, ready = false;
+let lastFaceTimestamp = -Infinity;
+let faceConfidence = 0;
 let palette = [[250, 250, 246], [254, 110, 0], [200, 197, 255], [22, 19, 19]];
 let tonalPalette = palette.slice().sort((a, b) => luminance(a) - luminance(b));
 let density = 96, pattern = 'knit', spriteSettings = '', sprites = new Map();
@@ -94,7 +97,20 @@ function cameraSample(now) {
     lastDetection = now;
     try {
       const result = faceDetector.detectForVideo(video, now);
-      presence.update(result.detections.length > 0, now);
+      const scores = (result.detections || [])
+        .map(detection => Number(detection?.categories?.[0]?.score ?? 0))
+        .filter(score => Number.isFinite(score));
+      const confidence = scores.length ? Math.max(...scores) : 0;
+      faceConfidence = confidence;
+      const foundFace = confidence >= .6;
+      if (foundFace) lastFaceTimestamp = now;
+      if (foundFace) {
+        presence.update(true, now);
+      } else if (now - lastFaceTimestamp <= 650) {
+        presence.update(false, now);
+      } else {
+        presence.reset();
+      }
     } catch (error) {
       console.error('Face detection stopped:', error);
       faceDetector.close(); faceDetector = null;
@@ -104,7 +120,9 @@ function cameraSample(now) {
   }
   const always = $('liveCameraResponse').value === 'always';
   const target = always ? 1 : presence.amount;
-  blend += (target - blend) * .14;
+  const ease = target > blend ? .24 : .32;
+  blend += (target - blend) * ease;
+  if (!always && !presence.visible && blend < .08) blend = 0;
   if (!faceDetector) return;
   message(always ? 'Caméra en direct — ton image est tissée avec la palette choisie.'
     : blend > .15 ? 'Visage détecté — ton image apparaît dans la palette choisie.'
@@ -170,7 +188,7 @@ function stopCamera() {
   const old = stream; stream = null;
   old?.getTracks().forEach(track => track.stop());
   video.srcObject = null; video.hidden = true;
-  pixels = null; presence.reset(); lastDetection = -Infinity; blend = 0;
+  pixels = null; faceConfidence = 0; presence.reset(); lastDetection = -Infinity; lastFaceTimestamp = -Infinity; blend = 0;
   $('enableLiveCamera').disabled = false;
   $('enableLiveCamera').hidden = false;
   $('enableLiveCamera').textContent = 'Activer la caméra';
@@ -200,13 +218,12 @@ async function enableCamera() {
   $('stopLiveCamera').hidden = false;
   message('Accepte « Autoriser » dans la demande caméra de ton navigateur.');
   try {
-    // Invoke permission directly from the button click; audio is never requested.
     const acquired = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
     if (id !== requestId) { acquired.getTracks().forEach(track => track.stop()); return; }
     stream = acquired; video.srcObject = acquired;
     await video.play();
     if (id !== requestId) return;
-    presence.reset(); pixels = null;
+    faceConfidence = 0; presence.reset(); pixels = null; lastFaceTimestamp = -Infinity;
     video.hidden = false;
     $('enableLiveCamera').hidden = true;
     message('Caméra autorisée. Préparation de la détection du visage…');
@@ -226,6 +243,11 @@ async function enableCamera() {
 $('enableLiveCamera').onclick = enableCamera;
 $('stopLiveCamera').onclick = stopCamera;
 $('toggleCloud').onclick = () => setActive(!active);
+$('hideLiveUI').onclick = () => {
+  const hideButton = document.getElementById('hideUI');
+  if (hideButton) hideButton.click();
+  else document.body.classList.add('presentation');
+};
 addEventListener('resize', resize);
 addEventListener('pagehide', () => { stopCamera(); cancelAnimationFrame(raf); });
 addEventListener('pageshow', event => { if (event.persisted) { lastTick = 0; raf = requestAnimationFrame(draw); } });

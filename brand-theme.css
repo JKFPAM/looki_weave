@@ -99,6 +99,20 @@ html:not(.client-mode) main>aside,html.client-mode .client-controls{top:50%!impo
 
 html.client-mode body.presentation #leavePresentation{top:auto!important;opacity:1!important}
 
+/* The canvas is the primary surface: keep the old top bar out of the way and
+   leave one clear escape hatch for presentation mode. */
+header{display:none!important}
+html:not(.client-mode) main,.client-mode main{height:100dvh!important;min-height:0!important}
+html:not(.client-mode) .canvas-area,.client-mode .canvas-area{height:100dvh!important}
+.canvas-area>.topline{display:block!important;position:fixed!important;right:24px;top:24px;z-index:50;width:auto;pointer-events:none}
+.canvas-area>.topline .canvas-actions{display:block!important}
+.canvas-area>.topline #hideUI{display:block!important;pointer-events:auto!important;padding:10px 15px;border-radius:999px!important;background:var(--ui-control)!important;color:var(--ui-text)!important;border:1px solid var(--ui-border)!important;box-shadow:0 6px 24px #0005}
+body.presentation .canvas-area>.topline{display:none!important}
+#hideUI.global-hide-ui{display:block!important;position:fixed!important;right:24px;top:24px;z-index:100!important;pointer-events:auto!important;padding:10px 15px;border-radius:999px!important;background:var(--ui-control)!important;color:var(--ui-text)!important;border:1px solid var(--ui-border)!important;box-shadow:0 6px 24px #0005}
+body.presentation #hideUI.global-hide-ui{display:none!important}
+@media(max-width:700px){.canvas-area>.topline{top:16px;right:16px}}
+@media(max-width:700px){#hideUI.global-hide-ui{top:16px;right:16px}}
+
 /* Client controls: fixed-open colour followed by compact disclosure sections. */
 .client-controls .client-section{border:0;border-top:1px solid #D9D7C7;border-radius:0;margin:0;padding:0;min-width:0;background:transparent}
 .client-controls .client-section:first-child{border-top:0}
