@@ -46,6 +46,13 @@ let faceConfidence = 0;
 let palette = [[250, 250, 246], [254, 110, 0], [200, 197, 255], [22, 19, 19]];
 let tonalPalette = palette.slice().sort((a, b) => luminance(a) - luminance(b));
 let density = 96, pattern = 'knit', spriteSettings = '', sprites = new Map();
+const compactDevice = matchMedia('(max-width: 700px)').matches
+  || (navigator.deviceMemory && navigator.deviceMemory <= 4)
+  || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4)
+  || navigator.connection?.saveData;
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const frameInterval = reducedMotion ? 1000 / 12 : compactDevice ? 1000 / 24 : 1000 / 30;
+const maxCells = reducedMotion ? 2600 : compactDevice ? 4800 : 7200;
 
 function message(text) { if (status.textContent !== text) status.textContent = text; }
 function syncSettings() {
@@ -60,9 +67,12 @@ function syncSettings() {
 }
 
 function resize() {
-  const scale = Math.min(1.5, devicePixelRatio || 1, 1500 / innerWidth, 1500 / innerHeight);
+  const pixelBudget = compactDevice ? 650000 : 1200000;
+  const budgetScale = Math.sqrt(pixelBudget / Math.max(1, innerWidth * innerHeight));
+  const scale = Math.min(1.25, devicePixelRatio || 1, 1500 / innerWidth, 1500 / innerHeight, budgetScale);
   canvas.width = Math.round(innerWidth * scale);
   canvas.height = Math.round(innerHeight * scale);
+  context.imageSmoothingEnabled = false;
 }
 
 // Reuse the studio's own yarn drawing for a bounded palette of live sprites.
@@ -143,13 +153,14 @@ async function prepareDetector() {
 }
 
 function draw(now) {
+  if (!active || document.hidden) { raf = 0; return; }
   raf = requestAnimationFrame(draw);
-  if (!active || !ready || document.hidden || now - lastTick < 50) return;
+  if (!ready || document.hidden || now - lastTick < frameInterval) return;
   const dt = Math.min(.1, (now - lastTick) / 1000); lastTick = now; phase += dt;
   cameraSample(now);
   if (!stream) blend *= .85;
   const W = canvas.width, H = canvas.height, aspect = W / H;
-  const cols = Math.min(density, Math.sqrt(9500 * aspect));
+  const cols = Math.min(density, Math.sqrt(maxCells * aspect));
   const step = W / cols;
   const rows = Math.ceil(H / step);
   context.fillStyle = `rgb(${tonalPalette[0].join(',')})`; context.fillRect(0, 0, W, H);
@@ -174,13 +185,22 @@ function draw(now) {
   }
 }
 
+document.addEventListener('visibilitychange', () => {
+  if (active && !document.hidden && !raf) { lastTick = 0; raf = requestAnimationFrame(draw); }
+});
+
 function setActive(on) {
   active = on;
   document.body.classList.toggle('live-cloud', on);
   $('toggleCloud').textContent = on ? 'Retour au studio' : 'Lancer le nuage';
   $('toggleCloud').setAttribute('aria-pressed', String(on));
-  if (on) window.loomMotion?.showStill();
-  else stopCamera();
+  if (on) {
+    window.loomMotion?.showStill();
+    if (!raf) { lastTick = 0; raf = requestAnimationFrame(draw); }
+  } else {
+    cancelAnimationFrame(raf); raf = 0;
+    stopCamera();
+  }
 }
 
 function stopCamera() {
