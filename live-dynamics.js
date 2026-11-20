@@ -22,6 +22,26 @@ export function liveColour(palette, tonalPalette, field, cameraRGB, blend, x, y)
   return palette[Math.min(palette.length - 1, low + (position - low > thresholdAt(x, y) ? 1 : 0))];
 }
 
+// Resolve palette luminance once per settings edit. The live loop passes scalar
+// samples and precomputed dither thresholds, avoiding per-stitch RGB arrays.
+export function createColourSelector(palette) {
+  const tones = palette.map((colour, index) => ({ index, light: luminance(colour) })).sort((a, b) => a.light - b.light);
+  return (field, light, blend, threshold, transition) => {
+    if (light >= 0 && blend > transition) {
+      let high = 0;
+      while (high < tones.length && tones[high].light < light) high++;
+      if (high === 0) return tones[0].index;
+      if (high === tones.length) return tones[high - 1].index;
+      const low = tones[high - 1], upper = tones[high];
+      return (light - low.light) / Math.max(.001, upper.light - low.light) > threshold ? upper.index : low.index;
+    }
+    const position = clamp(field) * (palette.length - 1), low = Math.floor(position);
+    return Math.min(palette.length - 1, low + (position - low > threshold ? 1 : 0));
+  };
+}
+
+export const ditherThreshold = thresholdAt;
+
 // Slowly evolving, continuous fields: no random seed jumps between frames.
 export function cloudField(x, y, time) {
   const u = x * 3.1 + Math.sin(y * 3.8 + time * .13) * .8;
@@ -40,12 +60,14 @@ export function coverUV(x, y, sourceAspect, targetAspect) {
 // A short hold prevents flicker when the detector briefly loses a moving face.
 export class FacePresence {
   constructor() { this.reset(); }
-  reset() { this.seenUntil = 0; this.amount = 0; this.visible = false; }
+  reset() { this.seenUntil = 0; this.amount = 0; this.visible = false; this.lastUpdate = null; }
   update(found, now) {
     if (found) this.seenUntil = now + 1100;
     this.visible = found || now < this.seenUntil;
     const target = this.visible ? 1 : 0;
-    this.amount += (target - this.amount) * (target ? .22 : .075);
+    const dt = this.lastUpdate === null ? 200 : Math.max(0, Math.min(250, now - this.lastUpdate));
+    this.lastUpdate = now;
+    this.amount += (target - this.amount) * (1 - Math.exp(-dt / (target ? 800 : 2600)));
     return { amount: this.amount, visible: this.visible };
   }
 }

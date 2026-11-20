@@ -21,7 +21,7 @@ if(!loaded){const fallback=readLocal(FALLBACK);if(fallback?.state){try{await win
 if(!loaded&&!clientView){const library=readLocal('chromatic-loom-studies-v2');if(Array.isArray(library)&&library.length){try{await window.loom.setState(library[library.length-1].state);loaded={ui:{preset:''}}}catch(e){}}}
 if(!loaded)await window.loomApplyDefault();else await restoreView(loaded.ui);
 restoring=false;document.querySelector('main').inert=false;document.querySelector('.header-actions').inert=false;lastSignature='';save();return true}
-for(const event of ['loomrender','loomselection','loomplacement'])document.addEventListener(event,save);
+for(const event of ['loomrender','loomsettings','loomselection','loomplacement'])document.addEventListener(event,save);
 document.addEventListener('input',e=>{if(e.target.type==='password'||e.target.type==='file')return;queueMicrotask(save)});document.addEventListener('change',e=>{if(e.target.type==='password'||e.target.type==='file')return;queueMicrotask(save)});
 document.addEventListener('click',e=>{if(e.target.closest('.studio-tabs,#viewZoom,#arrangeImages,#motionPlay,#motionRestart'))queueMicrotask(save)});document.addEventListener('toggle',e=>{if(e.target.closest?.('aside'))queueMicrotask(save)},true);document.querySelector('aside').addEventListener('scroll',()=>{clearTimeout(scrollTimer);scrollTimer=setTimeout(save,120)},{passive:true});
 addEventListener('pagehide',save);addEventListener('beforeunload',save);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')save()});

@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "test": "node --test *.test.js",
+    "benchmark": "node scripts/benchmark-live.mjs",
     "build": "vite build",
     "preview": "vite preview"
   },
